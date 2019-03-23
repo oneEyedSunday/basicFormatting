@@ -8,14 +8,16 @@ interface RegExpPatternAndReplacement {
   replacement: string;
   allowEmbeded: boolean;
   regExpPattern: RegExp;
+  pattern: string;
 }
 
 // new Formatter([])
 export default class Formatter {
   formatters: RegExpPatternAndReplacement[];
-  noEmbed: string = '';
+  noEmbed: string[] = [];
   constructor(formatters: StringPatternAndReplacement[]) {
     this.formatters = this.convertStringsToRegExps(formatters);
+    this.populateNoEmbeds();
     console.log(this.formatters);
 
   }
@@ -40,6 +42,7 @@ export default class Formatter {
     // filter through formatters
     // check if allowEmbed is set to false for any
     // populate noEmbeds prop with the 
+    this.noEmbed = this.formatters.filter(f => !f.allowEmbeded).map(g => g.pattern);
   }
 
   stripFormattersAndReturnHTML(textToFormat: string, tag: string): string {
@@ -52,6 +55,10 @@ export default class Formatter {
           return `<${formatter.replacement}>${enclosed}</${formatter.replacement}>`;
         })
         , word);
+  }
+
+  processText(text: string): string {
+    return this.watchForMultipleMatchers(text);
   }
 
 }
