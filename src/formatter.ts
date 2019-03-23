@@ -21,7 +21,8 @@ export default class Formatter {
   }
   // turn ` to /`(.?*)`/
   convertStringToRegExp(patternAsString: string): RegExp {
-    return new RegExp(patternAsString, 'g');
+    const patternEscapedRegExp = this.escapeRegex(patternAsString);
+    return new RegExp(`${patternEscapedRegExp}(.*?)${patternEscapedRegExp}`, 'g');
   }
 
   escapeRegex(value: string) {
