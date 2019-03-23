@@ -45,16 +45,28 @@ export default class Formatter {
     this.noEmbed = this.formatters.filter(f => !f.allowEmbeded).map(g => g.pattern);
   }
 
-  stripFormattersAndReturnHTML(textToFormat: string, tag: string): string {
-      return `<${tag}>${textToFormat}</${tag}>`;
+  stripFormattersAndReturnHTML(textToFormat: string, formatter: RegExpPatternAndReplacement): string {
+    try {
+      const elem = document.createElement(formatter.replacement);
+      elem.innerText = textToFormat;
+      return  `<${formatter.replacement}>${elem.innerHTML}</${formatter.replacement}>`
+    } catch (error) {
+      // console.log((error as Error).name);
+      const naivelyCleanedContent = this.naiveTagCleanUp(textToFormat);
+      return `<${formatter.replacement}>${naivelyCleanedContent}</${formatter.replacement}>`;
     }
+  }
   
   watchForMultipleMatchers(word: string): string {
       return this.formatters.reduce(
         (word, formatter) => word.replace(formatter.regExpPattern, (match, enclosed)  => {
-          return `<${formatter.replacement}>${enclosed}</${formatter.replacement}>`;
+          return this.stripFormattersAndReturnHTML(enclosed, formatter);
         })
         , word);
+  }
+
+  naiveTagCleanUp(rawContent: string): string {
+    return rawContent.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
   processText(text: string): string {
