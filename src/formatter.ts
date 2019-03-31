@@ -16,10 +16,19 @@ export default class Formatter {
   formatters: RegExpPatternAndReplacement[];
   noEmbed: string[] = [];
   constructor(formatters: StringPatternAndReplacement[]) {
+    if (!formatters) {
+      throw new Error('Invalid initialization arguments');
+    }
+    formatters = this.sanitize(formatters);
     this.formatters = this.convertStringsToRegExps(formatters);
     this.populateNoEmbeds();
 
   }
+
+  sanitize(initializations: any): any[] {
+    return (Array.isArray(initializations) ? initializations : [initializations]);
+  }
+  
   // turn ` to /`(.?*)`/
   convertStringToRegExp(patternAsString: string): RegExp {
     const patternEscapedRegExp = this.escapeRegex(patternAsString);
@@ -73,10 +82,12 @@ export default class Formatter {
     // check for occurences of formatters marked to not be embeddable
     // if they exists
     // parse text
-    const fragmentMatcher = this.noEmbed.map(n => this.findOccurencesOf(text, n));
-    console.log('Fragments', fragmentMatcher.filter(f => f.firstIndex > -1));
-    console.log(fragmentMatcher.filter(f => (f.firstIndex > -1) && (f.secondIndex > -1))
-    .map(f => text.substring(f.firstIndex, f.secondIndex + f.pattern.length)));
+    const fragmentMatcher: {firstIndex: number; secondIndex: number, pattern: string}[] = [];
+    this.noEmbed.forEach(n => { fragmentMatcher.push(...this.findOccurencesOf(text, n))});
+    // console.log('Fragments', fragmentMatcher.filter(f => f.firstIndex > -1));
+    fragmentMatcher.filter(f => (f.firstIndex > -1) && (f.secondIndex > -1))
+    .map(f => text.substring(f.firstIndex, f.secondIndex + f.pattern.length));
+
     return this.watchForMultipleMatchers(text);
   }
 
@@ -86,15 +97,30 @@ export default class Formatter {
       // repeat
       // if found
       // find second index
-  findOccurencesOf(textFragments: string, pattern: string): { firstIndex: number; secondIndex: number, pattern: string } {
-    const firstIndex = textFragments.indexOf(pattern);
+  findOccurencesOf(textFragments: string, pattern: string): { firstIndex: number; secondIndex: number, pattern: string }[] {
+    const results = [];
+    let res = this.findOccurenceOf(textFragments, pattern);
+    results.push(res);
+
+    while(res.secondIndex > -1) {
+      res = this.findOccurenceOf(res.removedOccurences, pattern);
+      results.push(res);
+    }
+    return results;
+  }
+
+  findOccurenceOf(textFragment: string, pattern: string): { firstIndex: number; secondIndex: number, pattern: string, removedOccurences: string } {
+    const firstIndex = textFragment.indexOf(pattern);
+    let stringReplaced = '';
     let secondIndex = -1;
     if (firstIndex > -1) {
       const stringToHoldInPlace = Array(pattern.length).fill(' ').join('');
-      secondIndex = textFragments.replace(pattern, stringToHoldInPlace).indexOf(pattern)
+      stringReplaced = textFragment.replace(pattern, stringToHoldInPlace);
+      secondIndex = textFragment.replace(pattern, stringToHoldInPlace).indexOf(pattern);
+      stringReplaced = textFragment.replace(pattern, stringToHoldInPlace);
     }
 
-    return { firstIndex, secondIndex, pattern };
+    return { firstIndex, secondIndex, pattern, removedOccurences: stringReplaced };
   }
 
 }
