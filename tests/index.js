@@ -15,7 +15,7 @@ describe('Basic Sanity Checks', () => {
     });
 
     it('should throw an error when no patterns are specified in contsructor', () => {
-        assert.throws(new Formatter());
+        assert.throws(() => new Formatter(), { name: 'Error', message: 'Invalid initialization arguments' });
     });
 
     it('should parse simple chunks', () => {
