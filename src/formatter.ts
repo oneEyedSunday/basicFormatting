@@ -16,10 +16,19 @@ export default class Formatter {
   formatters: RegExpPatternAndReplacement[];
   noEmbed: string[] = [];
   constructor(formatters: StringPatternAndReplacement[]) {
+    if (!formatters) {
+      throw new Error('Invalid initialization arguments');
+    }
+    formatters = this.sanitize(formatters);
     this.formatters = this.convertStringsToRegExps(formatters);
     this.populateNoEmbeds();
 
   }
+
+  sanitize(initializations: any): any[] {
+    return (Array.isArray(initializations) ? initializations : [initializations]);
+  }
+  
   // turn ` to /`(.?*)`/
   convertStringToRegExp(patternAsString: string): RegExp {
     const patternEscapedRegExp = this.escapeRegex(patternAsString);
